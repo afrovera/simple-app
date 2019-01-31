@@ -46,7 +46,7 @@ the app.
 Steps to deploy
 ------------------
 
-These steps assume that you have an AWS credentials with minimum required proveledges and domain name to test the AWS-managed SSL configuraiton.
+These steps assume that you have an AWS credentials with minimum required proveledges and domain name to test the AWS-managed SSL configuraiton. The number of services deployed by this project requires very broad IAM permissions, I recomment using MFA-protected IAM role with such policy. 
 
 1. Create CodePipeline with Git source.
 2. Create Infrastructure with AWS Beanstalk in 2 regions.
@@ -65,7 +65,7 @@ Steps to test
 1. The application contacts EC2 Metadata URL and returns an availibility zone from the backend instnace. Each time the app responds with "hello" and back-end AZ. Test by performing GET against the /hello endpoint.
 2. The application is spread across 2 AWS regions. Test by performing GET against /hello endpoint from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
 3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use Chaos monkey.
-4. Inspect AWS Inspector reports. To perform security testing, use an authorized platform simulate attacks. This should generate GuardDuty findings. 
+4. Inspect AWS Inspector reports. To perform security testing, use an authorized platform simulate attacks. This should generate GuardDuty findings and WAF metrics.
 
 What Should I Do Before Running My Project in Production?
 ------------------
