@@ -57,6 +57,7 @@ These steps assume that you have an AWS credentials with minimum required provel
 7. Deploy AWS Security Automations.
 8. Deploy AWS Inspector scheduled scans.
 9. Deploy AWS Security best Practices.
+10. Deploy AWS CIS Benchmark.
 
 Steps to test
 ------------------
