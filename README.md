@@ -49,9 +49,9 @@ Steps to deploy
 These steps assume that you have an AWS credentials with minimum required proveledges and domain name to test the AWS-managed SSL configuraiton.
 
 1. Create CodePipeline with Git source.
-2. Create Infrasructure with AWS Beanstalk in 2 regions.
+2. Create Infrastructure with AWS Beanstalk in 2 regions.
 3. Deploy CodePipeline to the AWS Beanstalk targets.
-4. Deploy API Gateway endpoint for multi-regional access.
+4. Deploy API Gateway proxy endpoint.
 5. Deploy Route 53 hosted zone.
 6  Deploy ACM certificate for API Gateway endpoint.
 7. Deploy AWS Security Automations.
@@ -63,13 +63,14 @@ Steps to test
 
 1. The application contacts EC2 Metadata URL and returns an availibility zone from the backend instnace. Each time the app responds with "hello" and back-end AZ. Test by performing GET against the /hello endpoint.
 2. The application is spread across 2 AWS regions. Test by performing GET against /hello endpoint from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
-3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use Chaos monkey to perform Chaos test.
+3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use Chaos monkey.
 4. Inspect AWS Inspector reports. To perform security testing, use an authorized platform simulate attacks. This should generate GuardDuty findings. 
 
 What Should I Do Before Running My Project in Production?
 ------------------
 
-AWS recommends you review the security best practices recommended by the framework author of your selected sample application before running it in production. You should also regularly review and apply any available patches or associated security
-advisories for dependencies used within your application.
+You should regularly apply patches and review security best practices for the dependencies used by your application. Use these security best practices to update your sample code and maintain your project in a production environment:
 
-Best Practices: https://docs.aws.amazon.com/codestar/latest/userguide/best-practices.html?icmpid=docs_acs_rm_sec
+1. Track ongoing security announcements and updates for your framework.
+2. Before you deploy your project, follow the best practices developed for your framework.
+3. Review dependencies for your framework on a regular basis and update as needed.
