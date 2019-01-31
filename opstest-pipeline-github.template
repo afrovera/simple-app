@@ -1,0 +1,330 @@
+{
+    "Description": "\n(opstest) - Deployment Pipeline for Spring Applications on AWS - AWS CloudFormation Template for AWS Solutions Builder Deployment Pipeline for Spring Applications on AWS - **WARNING** This template creates AWS resources. You will be billed for the AWS resources used if you create a stack from this template. This CloudFormation template will deploy a full CI/CD pipeline for Spring development. It includes building with AWS CodeBuild, and infrastructure deployment via AWS CloudFormation. It will create an AWS CodePipeline for orchastrating builds, testing and deployments to beta and production  environments. \n",
+    "Parameters": {
+        "ApplicationName": {
+            "Description": "This will be used to name the pipeline and build resources",
+            "Type": "String",
+            "Default": "devsecops-opstest",
+            "AllowedPattern": "[A-Za-z0-9-]+"
+        },
+        "ArtifactS3Bucket": {
+            "Description": "An existing S3 bucket within this AWS account",
+            "Type": "String",
+            "Default": "devsecops-opstest"
+        },
+        "GitHubOAuthToken": {
+            "Description": "Create a token with 'repo' and 'admin:repo_hook' permissions here https://github.com/settings/tokens",
+            "Type": "String",
+            "Default": "eb5a7fd24466b9ac057769b34997fc8a0bd22c48",
+            "NoEcho": true
+        },
+        "GitHubUser": {
+            "Description": "Enter GitHub username of the repository owner",
+            "Type": "String",
+            "Default": "afrovera"
+        },
+        "GitHubRepository": {
+            "Description": "Enter the repository name that should be monitored for changes",
+            "Type": "String",
+            "Default": "devsecops"
+        },
+        "GitHubBranch": {
+            "Description": "Enter the GitHub branch to monitored",
+            "Type": "String",
+            "Default": "master"
+        }
+    },
+    "Mappings": {
+        "Send": {
+            "AnonymousUsage": {
+                "Data": "Yes"
+            }
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Application Configuration"
+                    },
+                    "Parameters": [
+                        "ApplicationName",
+                        "ArtifactS3Bucket"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "GitHub Configuration"
+                    },
+                    "Parameters": [
+                        "GitHubOAuthToken",
+                        "GitHubUser",
+                        "GitHubRepository",
+                        "GitHubBranch"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "ApplicationName": {
+                    "default": "Application Name"
+                },
+                "ArtifactS3Bucket": {
+                    "default": "CodePipeline S3 Bucket"
+                },
+                "GitHubRepository": {
+                    "default": "Repository Name"
+                },
+                "GitHubUser": {
+                    "default": "Repository Owner"
+                },
+                "GitHubBranch": {
+                    "default": "Repository Branch"
+                },
+                "GitHubOAuthToken": {
+                    "default": "OAuth2 Token"
+                }
+            }
+        }
+    },
+    "Resources": {
+        "CodePipeline": {
+            "Type": "AWS::CodePipeline::Pipeline",
+            "Properties": {
+                "Name": {
+                    "Ref": "ApplicationName"
+                },
+                "RoleArn": {
+                    "Fn::Sub": "${CodePipelineRole.Arn}"
+                },
+                "ArtifactStore": {
+                    "Type": "S3",
+                    "Location": {
+                        "Ref": "ArtifactS3Bucket"
+                    }
+                },
+                "Stages": [
+                    {
+                        "Name": "Source",
+                        "Actions": [
+                            {
+                                "Name": "GitHub",
+                                "ActionTypeId": {
+                                    "Category": "Source",
+                                    "Owner": "ThirdParty",
+                                    "Version": 1,
+                                    "Provider": "GitHub"
+                                },
+                                "OutputArtifacts": [
+                                    {
+                                        "Name": "Source"
+                                    }
+                                ],
+                                "Configuration": {
+                                    "Owner": {
+                                        "Ref": "GitHubUser"
+                                    },
+                                    "Repo": {
+                                        "Ref": "GitHubRepository"
+                                    },
+                                    "Branch": {
+                                        "Ref": "GitHubBranch"
+                                    },
+                                    "OAuthToken": {
+                                        "Ref": "GitHubOAuthToken"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "Name": "Build",
+                        "Actions": [
+                            {
+                                "Name": "CodeBuild",
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "Source"
+                                    }
+                                ],
+                                "ActionTypeId": {
+                                    "Category": "Build",
+                                    "Owner": "AWS",
+                                    "Version": 1,
+                                    "Provider": "CodeBuild"
+                                },
+                                "OutputArtifacts": [
+                                    {
+                                        "Name": "Built"
+                                    }
+                                ],
+                                "Configuration": {
+                                    "ProjectName": {
+                                        "Ref": "CodeBuild"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        "CodeBuild": {
+            "Type": "AWS::CodeBuild::Project",
+            "Properties": {
+                "Name": {
+                    "Ref": "ApplicationName"
+                },
+                "Description": {
+                    "Fn::Sub": "Build project for ${ApplicationName}"
+                },
+                "ServiceRole": {
+                    "Ref": "CodeBuildRole"
+                },
+                "Source": {
+                    "Type": "CODEPIPELINE"
+                },
+                "Environment": {
+                    "ComputeType": "BUILD_GENERAL1_SMALL",
+                    "Image": "aws/codebuild/java:openjdk-8",
+                    "Type": "LINUX_CONTAINER",
+                    "EnvironmentVariables": [
+                        {
+                            "Name": "ARTIFACT_S3_BUCKET",
+                            "Value": {
+                                "Fn::Sub": "${ArtifactS3Bucket}"
+                            }
+                        }
+                    ]
+                },
+                "Artifacts": {
+                    "Name": {
+                        "Ref": "ApplicationName"
+                    },
+                    "Type": "CODEPIPELINE"
+                }
+            }
+        },
+        "CodePipelineRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "RoleName": {
+                    "Fn::Sub": "${ApplicationName}-CodePipeline-${AWS::Region}"
+                },
+                "AssumeRolePolicyDocument": "{\n    \"Statement\": [{\n        \"Action\": \"sts:AssumeRole\",\n        \"Effect\": \"Allow\",\n        \"Principal\": { \n            \"Service\": \"codepipeline.amazonaws.com\" \n        }\n    }]\n}\n",
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Sub": "${ApplicationName}-CodePipeline-${AWS::Region}"
+                        },
+                        "PolicyDocument": {
+                            "Fn::Sub": "{\n    \"Statement\": [\n        {\n            \"Action\": [ \"s3:GetBucketVersioning\" ],\n            \"Resource\": [ \"arn:aws:s3:::${ArtifactS3Bucket}\" ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"s3:PutObject\",\n                \"s3:GetObject\",\n                \"S3:GetObjectVersion\"\n            ],\n            \"Resource\": [\n                \"arn:aws:s3:::${ArtifactS3Bucket}/*\"\n            ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"codedeploy:CreateDeployment\",\n                \"codedeploy:GetApplicationRevision\",\n                \"codedeploy:GetDeployment\",\n                \"codedeploy:GetDeploymentConfig\",\n                \"codedeploy:RegisterApplicationRevision\"\n            ],\n            \"Resource\": \"*\",\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"cloudformation:CreateStack\",\n                \"cloudformation:DeleteStack\",\n                \"cloudformation:DescribeStacks\",\n                \"cloudformation:UpdateStack\",\n                \"cloudformation:CreateChangeSet\",\n                \"cloudformation:DeleteChangeSet\",\n                \"cloudformation:DescribeChangeSet\",\n                \"cloudformation:ExecuteChangeSet\",\n                \"cloudformation:SetStackPolicy\",\n                \"cloudformation:ValidateTemplate\",\n                \"iam:PassRole\"\n            ],\n            \"Resource\": [\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-CloudFormation-${AWS::Region}\",\n              \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationName}-staging/*\",\n              \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationName}-production/*\"\n              ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"codebuild:BatchGetBuilds\",\n                \"codebuild:StartBuild\"\n            ],\n            \"Resource\": \"*\",\n            \"Effect\": \"Allow\"\n        }\n    ]\n}\n"
+                        }
+                    }
+                ]
+            }
+        },
+        "CodePipelineCloudFormationRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "RoleName": {
+                    "Fn::Sub": "${ApplicationName}-CloudFormation-${AWS::Region}"
+                },
+                "AssumeRolePolicyDocument": "{\n    \"Statement\": [{\n        \"Action\": \"sts:AssumeRole\",\n        \"Effect\": \"Allow\",\n        \"Principal\": { \n            \"Service\": \"cloudformation.amazonaws.com\" \n        }\n    }]\n}\n",
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Sub": "${ApplicationName}-CloudFormation-${AWS::Region}"
+                        },
+                        "PolicyDocument": {
+                            "Fn::Sub": "{\n    \"Statement\": [{\n            \"Effect\": \"Allow\",\n            \"Action\": [\n              \"ec2:AssociateRouteTable\",\n              \"ec2:AttachInternetGateway\",\n              \"ec2:AttachNetworkInterface\",\n              \"ec2:CreateInternetGateway\",\n              \"ec2:CreateNatGateway\",\n              \"ec2:CreateNetworkInterface\",\n              \"ec2:CreateRoute\",\n              \"ec2:CreateRouteTable\",\n              \"ec2:CreateSubnet\",\n              \"ec2:CreateVolume\",\n              \"ec2:CreateVpc\",\n              \"ec2:createTags\",\n              \"ec2:CreateSecurityGroup\",\n              \"ec2:DeleteInternetGateway\",\n              \"ec2:DeleteNatGateway\",\n              \"ec2:DeleteNetworkInterface\",\n              \"ec2:DeleteRoute\",\n              \"ec2:DeleteRouteTable\",\n              \"ec2:DeleteSecurityGroup\",\n              \"ec2:DeleteSubnet\",\n              \"ec2:DeleteVolume\",\n              \"ec2:DeleteVpc\",\n              \"ec2:DeleteTags\",\n              \"ec2:DescribeInternetGateways\",\n              \"ec2:DescribeVpcs\",\n              \"ec2:DescribeRouteTables\",\n              \"ec2:DetachInternetGateway\",\n              \"ec2:ModifyVpcAttribute\",\n              \"ec2:DescribeAvailabilityZones\",\n              \"ec2:DescribeAccountAttributes\",\n              \"ec2:DescribeSubnets\",\n              \"ec2:DescribeSecurityGroups\",\n              \"ec2:AuthorizeSecurityGroupIngress\",\n              \"ec2:ModifySubnetAttribute\",\n              \"ec2:allocateAddress\",\n              \"ec2:DisassociateRouteTable\",\n              \"ec2:describeAddresses\",\n              \"ec2:DescribeNatGateways\",\n              \"ec2:releaseAddress\",\n              \"ec2:DescribeInstances\",\n              \"ec2:RevokeSecurityGroupIngress\",\n              \"elasticloadbalancing:CreateLoadBalancer\",\n              \"elasticloadbalancing:CreateLoadBalancerListeners\",\n              \"elasticloadbalancing:CreateRule\",\n              \"elasticloadbalancing:CreateTargetGroup\",\n              \"elasticloadbalancing:DeleteLoadBalancer\",\n              \"elasticloadbalancing:DeleteLoadBalancerListeners\",\n              \"elasticloadbalancing:DeleteRule\",\n              \"elasticloadbalancing:DeleteTargetGroup\",\n              \"elasticloadbalancing:SetSubnets\",\n              \"elasticloadbalancing:DescribeTargetGroups\",\n              \"elasticloadbalancingv2:DescribeTargetGroups\",\n              \"elasticloadbalancing:DescribeLoadBalancers\",\n              \"elasticloadbalancingv2:DescribeLoadBalancers\",\n              \"elasticloadbalancing:CreateListener\",\n              \"elasticloadbalancing:DescribeListeners\",\n              \"elasticloadbalancing:DeleteListener\",\n              \"autoscaling:CreateAutoScalingGroup\",\n              \"autoscaling:CreateLaunchConfiguration\",\n              \"autoscaling:DeleteAutoScalingGroup\",\n              \"autoscaling:DeleteLaunchConfiguration\",\n              \"autoscaling:DescribeAutoScalingGroup\",\n              \"autoscaling:DescribeAutoScalingGroups\",\n              \"autoscaling:DescribeScalingActivities\",\n              \"autoscaling:DescribeLaunchConfigurations\",\n              \"autoscaling:UpdateAutoScalingGroup\",\n              \"autoscaling:DescribeAutoScalingInstances\",\n              \"codedeploy:GetDeploymentGroup\",\n              \"codedeploy:CreateDeploymentGroup\",\n              \"codedeploy:DeleteDeploymentGroup\"\n             ],\n            \"Resource\": \"*\"\n    },                                \n    {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"iam:GetRole\",\n                \"iam:CreateRole\",\n                \"iam:PutRolePolicy\",\n                \"iam:DeleteRolePolicy\",\n                \"iam:DeleteRole\",\n                \"iam:CreateInstanceProfile\",\n                \"iam:AddRoleToInstanceProfile\",\n                \"iam:RemoveRoleFromInstanceProfile\",\n                \"iam:PassRole\",\n                \"iam:DeleteInstanceProfile\"\n            ],\n            \"Resource\": [\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-staging-${AWS::Region}\",\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-production-${AWS::Region}\",\n              \"arn:aws:iam::${AWS::AccountId}:instance-profile/gotest-staging-InstanceProfile-*\",\n              \"arn:aws:iam::${AWS::AccountId}:instance-profile/gotest-production-InstanceProfile-*\",\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-CodeDeploy-${AWS::Region}\"\n             ]\n        }\n    ]\n}\n"
+                        }
+                    }
+                ]
+            }
+        },
+        "CodeDeployApplication": {
+            "Type": "AWS::CodeDeploy::Application",
+            "Properties": {
+                "ApplicationName": {
+                    "Fn::Sub": "${ApplicationName}"
+                }
+            }
+        },
+        "CodeDeployServiceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "RoleName": {
+                    "Fn::Sub": "${ApplicationName}-CodeDeploy-${AWS::Region}"
+                },
+                "AssumeRolePolicyDocument": "{\n    \"Statement\": [{\n        \"Action\": \"sts:AssumeRole\",\n        \"Effect\": \"Allow\",\n        \"Principal\": { \n            \"Service\": \"codedeploy.amazonaws.com\" \n        }\n    }]\n}\n",
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Sub": "${AWS::StackName}-${AWS::Region}"
+                        },
+                        "PolicyDocument": {
+                            "Fn::Sub": "{\n    \"Version\": \"2012-10-17\",\n    \"Statement\": [\n        {\n        \"Effect\": \"Allow\",\n        \"Action\": [\n            \"autoscaling:CompleteLifecycleAction\",\n            \"autoscaling:DeleteLifecycleHook\",\n            \"autoscaling:DescribeAutoScalingGroups\",\n            \"autoscaling:DescribeLifecycleHooks\",\n            \"autoscaling:PutLifecycleHook\",\n            \"autoscaling:RecordLifecycleActionHeartbeat\",\n            \"ec2:DescribeInstances\",\n            \"ec2:DescribeInstanceStatus\",\n            \"tag:GetTags\",\n            \"tag:GetResources\",\n            \"sns:Publish\",\n            \"cloudwatch:DescribeAlarms\"\n        ],\n        \"Resource\": \"*\"\n        }\n    ]\n}\n"
+                        }
+                    }
+                ]
+            }
+        },
+        "CodeBuildRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "RoleName": {
+                    "Fn::Sub": "${ApplicationName}-CodeBuild-${AWS::Region}"
+                },
+                "AssumeRolePolicyDocument": "{\n    \"Statement\": [{\n        \"Action\": \"sts:AssumeRole\",\n        \"Effect\": \"Allow\",\n        \"Principal\": { \n            \"Service\": \"codebuild.amazonaws.com\" \n        }\n    }]\n}\n",
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Sub": "${ApplicationName}-CodeBuild-${AWS::Region}"
+                        },
+                        "PolicyDocument": {
+                            "Fn::Sub": "{\n    \"Statement\": [              \n        {\n            \"Effect\": \"Allow\",\n            \"Resource\": [ \"*\" ],\n            \"Action\": [\n                \"logs:CreateLogGroup\",\n                \"logs:CreateLogStream\",\n                \"logs:PutLogEvents\"\n            ]\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Resource\": [\n                \"arn:aws:s3:::${ArtifactS3Bucket}/*\"\n            ],\n            \"Action\": [\n                \"s3:GetObject\",\n                \"s3:GetObjectVersion\",\n                \"s3:PutObject\"\n            ]\n        }\n    ]\n}\n"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "CodePipelineURL": {
+            "Description": "The URL for the created pipeline",
+            "Value": {
+                "Fn::Sub": "https://${AWS::Region}.console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${ApplicationName}"
+            }
+        },
+        "CodeDeployApplication": {
+            "Description": "The CodeDeploy application used across all environments",
+            "Value": {
+                "Ref": "CodeDeployApplication"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "CodeDeployApplication-${ApplicationName}"
+                }
+            }
+        },
+        "CodeDeployServiceRoleArn": {
+            "Description": "The CodeDeploy service role used across all environments",
+            "Value": {
+                "Fn::GetAtt": [
+                    "CodeDeployServiceRole",
+                    "Arn"
+                ]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "CodeDeployServiceRoleArn-${ApplicationName}"
+                }
+            }
+        }
+    }
+}
