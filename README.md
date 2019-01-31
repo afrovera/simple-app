@@ -48,15 +48,17 @@ Steps to deploy
 
 These steps assume that you have an AWS credentials with minimum required privileges and domain name to test the AWS-managed SSL configuration. The number of services deployed by this project requires very broad IAM permissions, I recommend using MFA-protected IAM role with such policy. 
 
-1. Create AWS CodePipeline with Git source. Steps: 
-2. Create Infrastructure with AWS High Availibility Beanstalk environments in 2 regions. Steps: 
-3. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets. Steps: 
-4. Deploy AWS Cloudfront proxy endpoint (We will need it for WAF testing) and create 2 custom origins with FQDNs of 2 Beanstalk environments. Steps: 
-5. Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments. Steps: 
-6. Deploy ACM certificate for ALB/Cloudfront endpoint. Steps: 
-7. Deploy AWS WAF Security Automations. Steps: https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment
-8. Deploy AWS Threat Detections. Steps: https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates
-9. Deploy AWS CIS Benchmark. Steps: https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates
+1. Prepare AWS Account by creating EC2 Keypair to SSH to the instances and S3 bucket for storing CodeBuild Artifacts. To do this, in the navigation pane of the Amazon EC2 console, choose Key Pairs, Create Key Pair, type a name, and then choose Create. From the Amazon S3 console dashboard, choose Create Bucket. In Create a Bucket, type a bucket name in Bucket Name. Click Create.
+2. Create VPC stack with Public/Private subnets in multiple availibility zones. Steps: https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template
+3. Create AWS CodePipeline with Git source. Steps: https://github.com/afrovera/devsecops/blob/master/templates/opstest-pipeline-github.template
+4. Create Infrastructure with AWS High Availibility Beanstalk environments in 2 regions. Steps: 
+5. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets. Steps: 
+6. Deploy AWS Cloudfront proxy endpoint (We will need it for WAF testing) and create 2 custom origins with FQDNs of 2 Beanstalk environments. Steps: 
+7. Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments. Steps: 
+8. Deploy ACM certificate for ALB/Cloudfront endpoint. Steps: 
+9. Deploy AWS WAF Security Automations. Steps: https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment
+10. Deploy AWS Threat Detections. Steps: https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates
+11. Deploy AWS CIS Benchmark. Steps: https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates
 
 Steps to test
 ------------------
