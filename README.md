@@ -49,7 +49,7 @@ Steps to deploy
 These steps assume that you have an AWS credentials with minimum required privileges and domain name to test the AWS-managed SSL configuration. The number of services deployed by this project requires very broad IAM permissions, I recommend using MFA-protected IAM role with such policy. 
 
 1. Prepare AWS Account by creating EC2 Keypair to SSH to the instances and S3 bucket for storing CodeBuild Artifacts. To do this, in the navigation pane of the Amazon EC2 console, choose Key Pairs, Create Key Pair, type a name, and then choose Create. From the Amazon S3 console dashboard, choose Create Bucket. In Create a Bucket, type a bucket name in Bucket Name. Click Create.
-2. Create VPC stack with Public/Private subnets in multiple availibility zones. Steps: https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template
+2. Create [VPC Stack](https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template) with Public/Private subnets in multiple availibility zones.
 3. Create AWS CodePipeline with Git source. Steps: https://github.com/afrovera/devsecops/blob/master/templates/opstest-pipeline-github.template
 4. Create Infrastructure with AWS High Availibility Beanstalk environments in 2 regions. Steps: 
 5. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets. Steps: 
