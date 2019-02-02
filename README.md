@@ -46,7 +46,9 @@ the app.
 Steps to deploy
 ------------------
 
-These steps assume that you have an AWS credentials with minimum required privileges and domain name to test the AWS-managed SSL configuration. The number of services deployed by this project requires very broad IAM permissions, I recommend using MFA-protected IAM role with such policy. 
+These steps assume that you have an AWS credentials with minimum required privileges to deploy the stack. The number of services deployed by this project requires very broad IAM permissions, I recommend using MFA-protected IAM use/role with such policy.
+
+CodePipeline stack is designed to deploy to Elastic Beantalk which comes in 2 versions, with multi-subnet VPC and without VPC. After the deployment of the stack, Beanstalk environments can be auto-scaled for the purpose of failue tolerance testing. 
 
 1. Prepare AWS Account by creating EC2 Keypair to SSH to the instances and S3 bucket for storing CodeBuild Artifacts and Amazon-issued SSL certificate for securing the website. 
 
@@ -58,6 +60,8 @@ aws ec2 create-key-pair --key-name opstest --region eu-west-1
 aws s3api create-bucket --bucket devsecops-opstest --region us-east-1
 aws s3api create-bucket --bucket devsecops-opstest --region eu-west-1
 
+Optional extra
+------------------
 *Amazon-issued SSL certificate for securing the website in 2 regions (replace www.example.com with actual domain name).
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region eu-west-1
@@ -68,16 +72,16 @@ aws acm request-certificate --domain-name example.com --validation-method DNS --
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region eu-west-1
 
-2. Create [VPC Stack](https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template) with Public/Private subnets in multiple availibility zones.
+2. (Optional) Create [VPC Stack](https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template) with Public/Private subnets in multiple availibility zones.
 3. Create [Code Pipeline Stacks] (https://github.com/afrovera/devsecops/blob/master/templates/opstest-pipeline-github.template) in 2 regions with Git source of this repo.
-4. Create Infrastructure with AWS High Availibility Beanstalk environments in 2 regions. Steps: 
+4. Release the PipeLine change.
 5. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets in each region. Alternatively you can confugure [cross region actions] (https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html) in CodePipeline.
-6. Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
-7. Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments in 2 regions. Detailed steps:
+6. (Optional) Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
+7. (Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments in 2 regions. Detailed steps:
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-failover-alias.html
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html 
 8. Deploy [AWS WAF Security Automations] (https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
-9. Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
+9. Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
 10. Deploy [Threat detection stack] (https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
 11. Deploy [AWS CIS Benchmark stack] (https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
 
