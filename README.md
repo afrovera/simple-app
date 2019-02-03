@@ -49,7 +49,7 @@ About this solution
 
 I made a modification to the Java controller source code to call EC2 metadata URL when you hit /hello and return the backend AZ to the client for the purpose of this assignment. If you hit /hello 3 times when ELB is scaled to 3 back-ends, it will return 3 different AZs. For the purpose of this assignment the CFT tempalte is designed to scale to 3 backends during bootstrappng process. To bootstrap the environment scaled out to any specific number of backends modify the parameter of the CFT template to a minimum desired number. The app is build and deployed through CodePipeline to 2 Elastic Beanstalk applications which can be auto-scaled to fault tolerance tests. The CodePileline has integrated rollbacks and re-deployment options integrated by default. There is no SSH or password access to the Beanstalk backends since it has systems manager (SSM) agent already installed by default for remote access. App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework and Tomcat version. Amazon Inspector scanner confirmed the findings. Remediation is to upgrade Spring and Tomcat immediately. Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place.
 
-Link to the vulnerability scan report.
+Link to the [Scan reports](https://github.com/afrovera/devsecops/tree/master/reports).
 
 Steps to deploy
 ------------------
