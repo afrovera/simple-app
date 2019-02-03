@@ -58,7 +58,7 @@ These steps assume that you have an AWS credentials with minimum required privil
 
 CodePipeline stack is designed to deploy to Elastic Beantalk which comes in 2 versions, with multi-subnet VPC and without VPC. After the deployment of the stack, Beanstalk environments can be auto-scaled for the purpose of failue tolerance testing. 
 
-1. Prepare AWS Account by creating EC2 Keypair to SSH to the instances and S3 bucket for storing CodeBuild Artifacts and Amazon-issued SSL certificate for securing the website. 
+1. Prepare AWS Account by creating an S3 bucket for storing CodeBuild Artifacts and Amazon-issued SSL certificate for securing the website (optional). 
 
 *Create EC2 keypair in 2 regions (default opstest).
 aws ec2 create-key-pair --key-name opstest --region us-east-1
@@ -103,15 +103,26 @@ Steps to test
 
 *Beanstalk instances are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on Beanstalk-tagged instances.
 
+aws ssm send-command --document-name "AmazonInspector-ManageAWSAgent" --parameters commands=["echo helloWorld"] --targets "Key=Name,Values=my_beanstalk_hosts"
+
+*After execution of the above, create resource group, asessment template and run it.
+
 aws inspector create-resource-group --resource-group-tags key=Name,value=my_beanstalk_hosts
 
-*After execution of the above, create asessment template and run it.
+aws inspector create-assessment-target --assessment-target-name ExampleAssessmentTarget --resource-group-arn arn:aws:inspector:us-west-2:123456789012:resourcegroup/0-AB6DMKnv
 
+aws inspector create-assessment-template --assessment-target-arn arn:aws:inspector:us-west-2:123456789012:target/0-nvgVhaxX --assessment-template-name ExampleAssessmentTemplate --duration-in-seconds 180 --rules-package-arns arn:aws:inspector:us-west-2:758058086616:rulespackage/0-9hgA516p --user-attributes-for-findings key=ExampleTag,value=examplevalue
 
+aws inspector start-assessment-run --assessment-run-name examplerun --assessment-template-arn arn:aws:inspector:us-west-2:123456789012:target/0-nvgVhaxX/template/0-it5r2S4T
 
 To perform application and network security testing with third-party tools, use an authorized platform to simulate attacks. This should generate GuardDuty findings and WAF metrics.
 
 5. Evaluate audits of CIS Config rules for account-wide compliance.
+
+Fixing issues
+------------------
+
+TODO
 
 What Should I Do Before Running My Project in Production?
 ------------------
