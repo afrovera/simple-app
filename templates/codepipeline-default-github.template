@@ -1,5 +1,4 @@
 {
-    "Description": "\n(opstest) - Deployment Pipeline for Spring Applications on AWS - AWS CloudFormation Template for AWS Solutions Builder Deployment Pipeline for Spring Applications on AWS - **WARNING** This template creates AWS resources. You will be billed for the AWS resources used if you create a stack from this template. This CloudFormation template will deploy a full CI/CD pipeline for Spring development. It includes building with AWS CodeBuild, and infrastructure deployment via AWS CloudFormation. It will create an AWS CodePipeline for orchastrating builds, testing and deployments to beta and production  environments. \n",
     "Parameters": {
         "ApplicationName": {
             "Description": "This will be used to name the pipeline and build resources",
@@ -15,8 +14,7 @@
         "GitHubOAuthToken": {
             "Description": "Create a token with 'repo' and 'admin:repo_hook' permissions here https://github.com/settings/tokens",
             "Type": "String",
-            "Default": "eb5a7fd24466b9ac057769b34997fc8a0bd22c48",
-            "NoEcho": true
+            "Default": "eb5a7fd24466b9ac057769b34997fc8a0bd22c48"
         },
         "GitHubUser": {
             "Description": "Enter GitHub username of the repository owner",
@@ -88,6 +86,120 @@
         }
     },
     "Resources": {
+        "EC2InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "EC2Role"
+                    }
+                ]
+            }
+        },
+        "EC2Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "sts:AssumeRole",
+                            "Principal": {
+                                "Service": "ec2.amazonaws.com"
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier",
+                    "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+                ]
+            }
+        },
+        "JavaApplication": {
+            "Type": "AWS::ElasticBeanstalk::Application",
+            "Properties": {
+                "Description": "AWS Elastic Beanstalk Sample Application"
+            }
+        },
+        "JavaApplicationVersion": {
+            "Type": "AWS::ElasticBeanstalk::ApplicationVersion",
+            "Properties": {
+                "ApplicationName": {
+                    "Ref": "JavaApplication"
+                },
+                "Description": "AWS ElasticBeanstalk Sample Application Version",
+                "SourceBundle": {
+                    "S3Bucket": {
+                        "Fn::Join": [
+                            "-",
+                            [
+                                "elasticbeanstalk-samples",
+                                {
+                                    "Ref": "AWS::Region"
+                                }
+                            ]
+                        ]
+                    },
+                    "S3Key": "java-sample-app-v3.zip"
+                }
+            }
+        },
+        "javaConfigurationTemplate": {
+            "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+            "Properties": {
+                "ApplicationName": {
+                    "Ref": "JavaApplication"
+                },
+                "Description": "AWS ElasticBeanstalk Sample Configuration Template",
+                "OptionSettings": [
+                    {
+                        "Namespace": "aws:autoscaling:asg",
+                        "OptionName": "MinSize",
+                        "Value": "2"
+                    },
+                    {
+                        "Namespace": "aws:autoscaling:asg",
+                        "OptionName": "MaxSize",
+                        "Value": "6"
+                    },
+                    {
+                        "Namespace": "aws:elasticbeanstalk:environment",
+                        "OptionName": "EnvironmentType",
+                        "Value": "LoadBalanced"
+                    },
+                    {
+                        "Namespace": "aws:autoscaling:launchconfiguration",
+                        "OptionName": "IamInstanceProfile",
+                        "Value": {
+                            "Ref": "EC2InstanceProfile"
+                        }
+                    }
+                ],
+                "SolutionStackName": "64bit Amazon Linux 2018.03 v2.8.0 running Java 8"
+            }
+        },
+        "javaEnvironment": {
+            "Type": "AWS::ElasticBeanstalk::Environment",
+            "DependsOn": [
+                "JavaApplication",
+                "javaConfigurationTemplate",
+                "JavaApplicationVersion"
+            ],
+            "Properties": {
+                "ApplicationName": {
+                    "Ref": "JavaApplication"
+                },
+                "Description": "AWS ElasticBeanstalk Sample java Environment",
+                "TemplateName": {
+                    "Ref": "javaConfigurationTemplate"
+                },
+                "VersionLabel": {
+                    "Ref": "JavaApplicationVersion"
+                }
+            }
+        },
         "CodePipeline": {
             "Type": "AWS::CodePipeline::Pipeline",
             "Properties": {
@@ -219,7 +331,7 @@
                             "Fn::Sub": "${ApplicationName}-CodePipeline-${AWS::Region}"
                         },
                         "PolicyDocument": {
-                            "Fn::Sub": "{\n    \"Statement\": [\n        {\n            \"Action\": [ \"s3:GetBucketVersioning\" ],\n            \"Resource\": [ \"arn:aws:s3:::${ArtifactS3Bucket}\" ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"s3:PutObject\",\n                \"s3:GetObject\",\n                \"S3:GetObjectVersion\"\n            ],\n            \"Resource\": [\n                \"arn:aws:s3:::${ArtifactS3Bucket}/*\"\n            ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"codedeploy:CreateDeployment\",\n                \"codedeploy:GetApplicationRevision\",\n                \"codedeploy:GetDeployment\",\n                \"codedeploy:GetDeploymentConfig\",\n                \"codedeploy:RegisterApplicationRevision\"\n            ],\n            \"Resource\": \"*\",\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"cloudformation:CreateStack\",\n                \"cloudformation:DeleteStack\",\n                \"cloudformation:DescribeStacks\",\n                \"cloudformation:UpdateStack\",\n                \"cloudformation:CreateChangeSet\",\n                \"cloudformation:DeleteChangeSet\",\n                \"cloudformation:DescribeChangeSet\",\n                \"cloudformation:ExecuteChangeSet\",\n                \"cloudformation:SetStackPolicy\",\n                \"cloudformation:ValidateTemplate\",\n                \"iam:PassRole\"\n            ],\n            \"Resource\": [\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-CloudFormation-${AWS::Region}\",\n              \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationName}-staging/*\",\n              \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ApplicationName}-production/*\"\n              ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"codebuild:BatchGetBuilds\",\n                \"codebuild:StartBuild\"\n            ],\n            \"Resource\": \"*\",\n            \"Effect\": \"Allow\"\n        }\n    ]\n}\n"
+                            "Fn::Sub": "{\n    \"Statement\": [\n        {\n            \"Action\": [  \"s3:GetBucketVersioning\",\n    \"s3:PutObject\",\n    \"s3:GetObject\",\n    \"S3:GetObjectVersion\" ],\n            \"Resource\": [\"arn:aws:s3:::${ArtifactS3Bucket}\",\n    \"arn:aws:s3:::${ArtifactS3Bucket}/*\" ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n            \"s3:CreateBucket\",\n            \"s3:ListBucket\",\n            \"s3:GetBucketAcl\",\n            \"s3:GetBucketPolicy\",\n            \"s3:GetBucketLocation\",\n            \"s3:GetObject*\",\n            \"s3:DeleteObject\",\n            \"s3:PutObject*\"\n            ],\n            \"Resource\": [\n            \"arn:aws:s3:::elasticbeanstalk*/*\",\n            \"arn:aws:s3:::codepipeline*/*\",\n            \"arn:aws:s3:::elasticbeanstalk*\",\n            \"arn:aws:s3:::codepipeline*\"\n            ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n    \"codedeploy:CreateDeployment\",\n    \"codedeploy:GetApplicationRevision\",\n    \"codedeploy:GetDeployment\",\n    \"codedeploy:GetDeploymentConfig\",\n    \"codedeploy:RegisterApplicationRevision\",\n    \"ec2:DescribeImages\",\n    \"autoscaling:Describe*\",\n    \"elasticloadbalancing:DescribeLoadBalancers\",\n    \"autoscaling:DescribeAutoScalingGroups\",\n    \"autoscaling:DescribeLaunchConfigurations\",\n      \"codebuild:BatchGetBuilds\",\n    \"codebuild:StartBuild\",\n    \"autoscaling:DescribeScalingActivities\"\n            ],\n            \"Resource\": \"*\",\n            \"Effect\": \"Allow\"\n        },\n            {\n            \"Action\": [\n    \"cloudformation:CancelUpdateStack\",\n    \"cloudformation:DescribeStackResource\",\n    \"cloudformation:CreateChangeSet\",\n    \"elasticbeanstalk:CreateApplicationVersion\",\n    \"cloudformation:DeleteChangeSet\",\n    \"iam:PassRole\",\n    \"cloudformation:DescribeStackEvents\",\n    \"elasticbeanstalk:DescribeEnvironments\",\n    \"elasticbeanstalk:DescribeApplicationVersions\",\n    \"cloudformation:UpdateStack\",\n    \"elasticbeanstalk:DescribeApplications\",\n    \"elasticloadbalancing:ApplySecurityGroupsToLoadBalancer\",\n    \"cloudformation:DescribeChangeSet\",\n    \"cloudformation:ExecuteChangeSet\",\n    \"elasticloadbalancing:RegisterInstancesWithLoadBalancer\",\n    \"cloudformation:ListStackResources\",\n    \"cloudformation:SetStackPolicy\",\n    \"autoscaling:ResumeProcesses\",\n    \"cloudformation:DescribeStackResources\",\n    \"autoscaling:SuspendProcesses\",\n    \"s3:GetBucketVersioning\",\n    \"cloudformation:DescribeStacks\",\n    \"s3:PutObject\",\n    \"s3:GetObject\",\n    \"cloudformation:DescribeStackResourceDrifts\",\n    \"cloudformation:CreateStack\",\n    \"elasticbeanstalk:DescribeEvents\",\n    \"cloudformation:GetTemplate\",\n    \"cloudformation:DeleteStack\",\n    \"elasticbeanstalk:UpdateEnvironment\"\n             ],\n            \"Resource\": [\n    \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-CloudFormation-${AWS::Region}*\",\n    \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/awseb-*\",\n    \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${JavaApplication}\",\n    \"arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/*:*\",\n    \"arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/awseb-*\",\n    \"arn:aws:elasticbeanstalk:${AWS::Region}:${AWS::AccountId}:environment/*\",\n    \"arn:aws:elasticbeanstalk:${AWS::Region}:${AWS::AccountId}:applicationversion/*\",\n    \"arn:aws:elasticbeanstalk:${AWS::Region}:${AWS::AccountId}:configurationtemplate/${javaConfigurationTemplate}\",\n    \"arn:aws:elasticbeanstalk:${AWS::Region}:${AWS::AccountId}:application/${JavaApplication}\",\n    \"arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/awseb-*\"\n              ],\n            \"Effect\": \"Allow\"\n        },\n        {\n            \"Action\": [\n                \"codebuild:BatchGetBuilds\",\n                \"codebuild:StartBuild\"\n            ],\n            \"Resource\": \"*\",\n            \"Effect\": \"Allow\"\n        }\n    ]\n}\n"
                         }
                     }
                 ]
@@ -239,7 +351,7 @@
                             "Fn::Sub": "${ApplicationName}-CloudFormation-${AWS::Region}"
                         },
                         "PolicyDocument": {
-                            "Fn::Sub": "{\n    \"Statement\": [{\n            \"Effect\": \"Allow\",\n            \"Action\": [\n              \"ec2:AssociateRouteTable\",\n              \"ec2:AttachInternetGateway\",\n              \"ec2:AttachNetworkInterface\",\n              \"ec2:CreateInternetGateway\",\n              \"ec2:CreateNatGateway\",\n              \"ec2:CreateNetworkInterface\",\n              \"ec2:CreateRoute\",\n              \"ec2:CreateRouteTable\",\n              \"ec2:CreateSubnet\",\n              \"ec2:CreateVolume\",\n              \"ec2:CreateVpc\",\n              \"ec2:createTags\",\n              \"ec2:CreateSecurityGroup\",\n              \"ec2:DeleteInternetGateway\",\n              \"ec2:DeleteNatGateway\",\n              \"ec2:DeleteNetworkInterface\",\n              \"ec2:DeleteRoute\",\n              \"ec2:DeleteRouteTable\",\n              \"ec2:DeleteSecurityGroup\",\n              \"ec2:DeleteSubnet\",\n              \"ec2:DeleteVolume\",\n              \"ec2:DeleteVpc\",\n              \"ec2:DeleteTags\",\n              \"ec2:DescribeInternetGateways\",\n              \"ec2:DescribeVpcs\",\n              \"ec2:DescribeRouteTables\",\n              \"ec2:DetachInternetGateway\",\n              \"ec2:ModifyVpcAttribute\",\n              \"ec2:DescribeAvailabilityZones\",\n              \"ec2:DescribeAccountAttributes\",\n              \"ec2:DescribeSubnets\",\n              \"ec2:DescribeSecurityGroups\",\n              \"ec2:AuthorizeSecurityGroupIngress\",\n              \"ec2:ModifySubnetAttribute\",\n              \"ec2:allocateAddress\",\n              \"ec2:DisassociateRouteTable\",\n              \"ec2:describeAddresses\",\n              \"ec2:DescribeNatGateways\",\n              \"ec2:releaseAddress\",\n              \"ec2:DescribeInstances\",\n              \"ec2:RevokeSecurityGroupIngress\",\n              \"elasticloadbalancing:CreateLoadBalancer\",\n              \"elasticloadbalancing:CreateLoadBalancerListeners\",\n              \"elasticloadbalancing:CreateRule\",\n              \"elasticloadbalancing:CreateTargetGroup\",\n              \"elasticloadbalancing:DeleteLoadBalancer\",\n              \"elasticloadbalancing:DeleteLoadBalancerListeners\",\n              \"elasticloadbalancing:DeleteRule\",\n              \"elasticloadbalancing:DeleteTargetGroup\",\n              \"elasticloadbalancing:SetSubnets\",\n              \"elasticloadbalancing:DescribeTargetGroups\",\n              \"elasticloadbalancingv2:DescribeTargetGroups\",\n              \"elasticloadbalancing:DescribeLoadBalancers\",\n              \"elasticloadbalancingv2:DescribeLoadBalancers\",\n              \"elasticloadbalancing:CreateListener\",\n              \"elasticloadbalancing:DescribeListeners\",\n              \"elasticloadbalancing:DeleteListener\",\n              \"autoscaling:CreateAutoScalingGroup\",\n              \"autoscaling:CreateLaunchConfiguration\",\n              \"autoscaling:DeleteAutoScalingGroup\",\n              \"autoscaling:DeleteLaunchConfiguration\",\n              \"autoscaling:DescribeAutoScalingGroup\",\n              \"autoscaling:DescribeAutoScalingGroups\",\n              \"autoscaling:DescribeScalingActivities\",\n              \"autoscaling:DescribeLaunchConfigurations\",\n              \"autoscaling:UpdateAutoScalingGroup\",\n              \"autoscaling:DescribeAutoScalingInstances\",\n              \"codedeploy:GetDeploymentGroup\",\n              \"codedeploy:CreateDeploymentGroup\",\n              \"codedeploy:DeleteDeploymentGroup\"\n             ],\n            \"Resource\": \"*\"\n    },                                \n    {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"iam:GetRole\",\n                \"iam:CreateRole\",\n                \"iam:PutRolePolicy\",\n                \"iam:DeleteRolePolicy\",\n                \"iam:DeleteRole\",\n                \"iam:CreateInstanceProfile\",\n                \"iam:AddRoleToInstanceProfile\",\n                \"iam:RemoveRoleFromInstanceProfile\",\n                \"iam:PassRole\",\n                \"iam:DeleteInstanceProfile\"\n            ],\n            \"Resource\": [\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-staging-${AWS::Region}\",\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-production-${AWS::Region}\",\n              \"arn:aws:iam::${AWS::AccountId}:instance-profile/gotest-staging-InstanceProfile-*\",\n              \"arn:aws:iam::${AWS::AccountId}:instance-profile/gotest-production-InstanceProfile-*\",\n              \"arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-CodeDeploy-${AWS::Region}\"\n             ]\n        }\n    ]\n}\n"
+                            "Fn::Sub": "{\n    \"Statement\": [{\n            \"Effect\": \"Allow\",\n            \"Action\": [\n              \"ec2:AssociateRouteTable\",\n              \"ec2:AttachInternetGateway\",\n              \"ec2:AttachNetworkInterface\",\n              \"ec2:CreateInternetGateway\",\n              \"ec2:CreateNatGateway\",\n              \"ec2:CreateNetworkInterface\",\n              \"ec2:CreateRoute\",\n              \"ec2:CreateRouteTable\",\n              \"ec2:CreateSubnet\",\n              \"ec2:CreateVolume\",\n              \"ec2:CreateVpc\",\n              \"ec2:createTags\",\n              \"ec2:CreateSecurityGroup\",\n              \"ec2:DeleteInternetGateway\",\n              \"ec2:DeleteNatGateway\",\n              \"ec2:DeleteNetworkInterface\",\n              \"ec2:DeleteRoute\",\n              \"ec2:DeleteRouteTable\",\n              \"ec2:DeleteSecurityGroup\",\n              \"ec2:DeleteSubnet\",\n              \"ec2:DeleteVolume\",\n              \"ec2:DeleteVpc\",\n              \"ec2:DeleteTags\",\n              \"ec2:DescribeInternetGateways\",\n              \"ec2:DescribeVpcs\",\n              \"ec2:DescribeRouteTables\",\n              \"ec2:DetachInternetGateway\",\n              \"ec2:ModifyVpcAttribute\",\n              \"ec2:DescribeAvailabilityZones\",\n              \"ec2:DescribeAccountAttributes\",\n              \"ec2:DescribeSubnets\",\n              \"ec2:DescribeSecurityGroups\",\n              \"ec2:AuthorizeSecurityGroupIngress\",\n              \"ec2:ModifySubnetAttribute\",\n              \"ec2:allocateAddress\",\n              \"ec2:DisassociateRouteTable\",\n              \"ec2:describeAddresses\",\n              \"ec2:DescribeNatGateways\",\n              \"ec2:releaseAddress\",\n              \"ec2:DescribeInstances\",\n              \"ec2:RevokeSecurityGroupIngress\",\n              \"elasticloadbalancing:CreateLoadBalancer\",\n              \"elasticloadbalancing:CreateLoadBalancerListeners\",\n              \"elasticloadbalancing:CreateRule\",\n              \"elasticloadbalancing:CreateTargetGroup\",\n              \"elasticloadbalancing:DeleteLoadBalancer\",\n              \"elasticloadbalancing:DeleteLoadBalancerListeners\",\n              \"elasticloadbalancing:DeleteRule\",\n              \"elasticloadbalancing:DeleteTargetGroup\",\n              \"elasticloadbalancing:SetSubnets\",\n              \"elasticloadbalancing:DescribeTargetGroups\",\n              \"elasticloadbalancingv2:DescribeTargetGroups\",\n              \"elasticloadbalancing:DescribeLoadBalancers\",\n              \"elasticloadbalancingv2:DescribeLoadBalancers\",\n              \"elasticloadbalancing:CreateListener\",\n              \"elasticloadbalancing:DescribeListeners\",\n              \"elasticloadbalancing:DeleteListener\",\n              \"autoscaling:CreateAutoScalingGroup\",\n              \"autoscaling:CreateLaunchConfiguration\",\n              \"autoscaling:DeleteAutoScalingGroup\",\n              \"autoscaling:DeleteLaunchConfiguration\",\n              \"autoscaling:DescribeAutoScalingGroup\",\n              \"autoscaling:DescribeAutoScalingGroups\",\n              \"autoscaling:DescribeScalingActivities\",\n              \"autoscaling:DescribeLaunchConfigurations\",\n              \"autoscaling:UpdateAutoScalingGroup\",\n              \"autoscaling:DescribeAutoScalingInstances\",\n              \"codedeploy:GetDeploymentGroup\",\n              \"codedeploy:CreateDeploymentGroup\",\n              \"codedeploy:DeleteDeploymentGroup\"\n             ],\n            \"Resource\": \"*\"\n    },                                \n    {\n            \"Effect\": \"Allow\",\n            \"Action\": [\n                \"iam:GetRole\",\n                \"iam:CreateRole\",\n                \"iam:PutRolePolicy\",\n                \"iam:DeleteRolePolicy\",\n                \"iam:DeleteRole\",\n                \"iam:CreateInstanceProfile\",\n                \"iam:AddRoleToInstanceProfile\",\n                \"iam:RemoveRoleFromInstanceProfile\",\n                \"iam:PassRole\",\n                \"iam:DeleteInstanceProfile\"\n            ],\n            \"Resource\": [\n              \"arn:aws:iam::${AWS::AccountId}:role/${JavaApplication}-staging-${AWS::Region}\",\n              \"arn:aws:iam::${AWS::AccountId}:role/${JavaApplication}-production-${AWS::Region}\",\n              \"arn:aws:iam::${AWS::AccountId}:instance-profile/gotest-staging-InstanceProfile-*\",\n              \"arn:aws:iam::${AWS::AccountId}:instance-profile/gotest-production-InstanceProfile-*\",\n              \"arn:aws:iam::${AWS::AccountId}:role/${JavaApplication}-CodeDeploy-${AWS::Region}\"\n             ]\n        }\n    ]\n}\n"
                         }
                     }
                 ]
@@ -278,13 +390,13 @@
             "Properties": {
                 "Path": "/",
                 "RoleName": {
-                    "Fn::Sub": "${ApplicationName}-CodeBuild-${AWS::Region}"
+                    "Fn::Sub": "${JavaApplication}-CodeBuild-${AWS::Region}"
                 },
                 "AssumeRolePolicyDocument": "{\n    \"Statement\": [{\n        \"Action\": \"sts:AssumeRole\",\n        \"Effect\": \"Allow\",\n        \"Principal\": { \n            \"Service\": \"codebuild.amazonaws.com\" \n        }\n    }]\n}\n",
                 "Policies": [
                     {
                         "PolicyName": {
-                            "Fn::Sub": "${ApplicationName}-CodeBuild-${AWS::Region}"
+                            "Fn::Sub": "${JavaApplication}-CodeBuild-${AWS::Region}"
                         },
                         "PolicyDocument": {
                             "Fn::Sub": "{\n    \"Statement\": [              \n        {\n            \"Effect\": \"Allow\",\n            \"Resource\": [ \"*\" ],\n            \"Action\": [\n                \"logs:CreateLogGroup\",\n                \"logs:CreateLogStream\",\n                \"logs:PutLogEvents\"\n            ]\n        },\n        {\n            \"Effect\": \"Allow\",\n            \"Resource\": [\n                \"arn:aws:s3:::${ArtifactS3Bucket}/*\"\n            ],\n            \"Action\": [\n                \"s3:GetObject\",\n                \"s3:GetObjectVersion\",\n                \"s3:PutObject\"\n            ]\n        }\n    ]\n}\n"
