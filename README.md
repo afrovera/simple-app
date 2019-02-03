@@ -43,6 +43,14 @@ https://github.com/lc-nyovchev/opstest/tree/389aa8a2c7c410542e1517c92b8d714c76dd
 the app.
 3. A recommendation to improve the security of the app or infrastructure in your project.
 
+
+About this solution
+--------------------
+
+I made a modification to the Java controller source code to call EC2 metadata URL when you hit /hello and return the backend AZ to the client for the purpose of this assignment. If you hit /hello 3 times when ELB is scaled to 3 back-ends, it will return 3 different AZs. For the purpose of this assignment the CFT tempalte is designed to scale to 3 backends during bootstrappng process. To bootstrap the environment scaled out to any specific number of backends modify the parameter of the CFT template to a minimum desired number. The app is build and deployed through CodePipeline to 2 Elastic Beanstalk applications which can be auto-scaled to fault tolerance tests. The CodePileline has integrated rollbacks and re-deployment options integrated by default. There is no SSH or password access to the Beanstalk backends since it has systems manager (SSM) agent already installed by default for remote access. App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework and Tomcat version. Amazon Inspector scanner confirmed the findings. Remediation is to upgrade Spring and Tomcat immediately. Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place.
+
+Link to the vulnerability scan report.
+
 Steps to deploy
 ------------------
 
@@ -66,24 +74,24 @@ Optional extra
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region eu-west-1
 
-*[Validate Certificate] (https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html#gs-acm-use-dns) by creating CNAME record for the domain and wait for certificate to be issued (approximately 5 minutes with Route 53).
+*[Validate Certificate](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html#gs-acm-use-dns) by creating CNAME record for the domain and wait for certificate to be issued (approximately 5 minutes with Route 53).
 
 *If you canont update DNS records for the domain, use e-mail validation.
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region eu-west-1
 
 2. (Optional) Create [VPC Stack](https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template) with Public/Private subnets in multiple availibility zones.
-3. Create [Code Pipeline Stacks] (https://github.com/afrovera/devsecops/blob/master/templates/opstest-pipeline-github.template) in 2 regions with Git source of this repo.
+3. Create [Code Pipeline Stacks](https://github.com/afrovera/devsecops/blob/master/templates/opstest-pipeline-github.template) in 2 regions with Git source of this repo.
 4. Release the PipeLine change.
-5. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets in each region. Alternatively you can confugure [cross region actions] (https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html) in CodePipeline.
+5. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets in each region. Alternatively you can confugure [cross region actions](https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html) in CodePipeline.
 6. (Optional) Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
 7. (Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments in 2 regions. Detailed steps:
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-failover-alias.html
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html 
-8. Deploy [AWS WAF Security Automations] (https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
+8. Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
 9. Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
-10. Deploy [Threat detection stack] (https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
-11. Deploy [AWS CIS Benchmark stack] (https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
+10. Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
+11. Deploy [AWS CIS Benchmark stack](https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
 
 Steps to test
 ------------------
@@ -91,8 +99,19 @@ Steps to test
 1. The application contacts EC2 Metadata URL and returns an availability zone from the backend instance. Each time the app responds with "hello" and back-end AZ. Test by performing GET against the /hello endpoint.
 2. The application is spread across 2 AWS regions. Test by performing GET against /hello endpoint from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
 3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use Chaos monkey.
-4. Inspect AWS Inspector reports. To perform security testing, use an authorized platform to simulate attacks. This should generate GuardDuty findings and WAF metrics.
-5. Evaluate audits of CIS Config rules.
+4. Inspect AWS Inspector reports. 
+
+*Beanstalk instances are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on Beanstalk-tagged instances.
+
+aws inspector create-resource-group --resource-group-tags key=Name,value=my_beanstalk_hosts
+
+*After execution of the above, create asessment template and run it.
+
+
+
+To perform application and network security testing with third-party tools, use an authorized platform to simulate attacks. This should generate GuardDuty findings and WAF metrics.
+
+5. Evaluate audits of CIS Config rules for account-wide compliance.
 
 What Should I Do Before Running My Project in Production?
 ------------------
