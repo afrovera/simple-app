@@ -97,9 +97,9 @@ Steps to test
 ------------------
 
 1. The application contacts EC2 Metadata URL and returns an availability zone from the backend instance. Each time the app responds with "hello" and back-end AZ. Test by performing GET against the /hello endpoint.
-2. The application is spread across 2 AWS regions. Test by performing GET against /hello endpoint from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
-3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use Chaos monkey.
-4. Inspect AWS Inspector reports. 
+2. The application is spread across 2 AWS regions. It is possibleto test this multi-regional failover by associating 2 Beanstalk FQDN's with a domain in Route 53. Test by performing GET against /hello endpoint of a domain from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
+3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use a tool such as [Chaos monkey](https://github.com/Netflix/chaosmonkey) to automatically invoke fault tolerance tests.
+4. Inspect AWS Inspector reports and follow the remediation suggestions. 
 
 *Beanstalk instances are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on Beanstalk-tagged instances.
 
@@ -122,7 +122,7 @@ To perform application and network security testing with third-party tools, use 
 Fixing issues
 ------------------
 
-TODO
+Upgrade Spring and Tomcat on GutHub and re-test source-code. Release the change in CodeDeploy. Re-test the back-end instances with Inspector. Implement static code analysis in CodePipeline stages. Schedule Inspector runs. 
 
 What Should I Do Before Running My Project in Production?
 ------------------
