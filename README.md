@@ -119,13 +119,15 @@ To perform application and network security testing with third-party tools, use 
 
 5. Evaluate audits of CIS Config rules for account-wide compliance.
 
-Fixing issues
-------------------
+Fixing immediate issues
+------------------------
 
-Upgrade Spring and Tomcat on GutHub and re-test source-code. Release the change in CodeDeploy. Re-test the back-end instances with Inspector. Implement static code analysis in CodePipeline stages. Schedule Inspector runs. 
+For webapp: Upgrade Spring and Tomcat on GutHub and re-test source-code. Release the change in CodeDeploy. Re-test the back-end instances with Inspector. Implement static code analysis in CodePipeline stages. Schedule Inspector runs. 
+
+For AWS environment: reverse engineer IAM policies and implement least priveledge by scoping down all permissions to required resources only where possible. Fix all other issues detected by CIS Config rules in the account. 
 
 What Should I Do Before Running My Project in Production?
-------------------
+---------------------------------------------------------
 
 You should regularly apply patches and review security best practices for the dependencies used by your application. Use these security best practices to update your sample code and maintain your project in a production environment:
 
