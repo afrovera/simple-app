@@ -122,7 +122,7 @@ To perform application and network security testing with third-party tools, use 
 Fixing immediate issues
 ------------------------
 
-For webapp: Upgrade Spring and Tomcat on GutHub and re-test source-code. Release the change in CodeDeploy. Re-test the back-end instances with Inspector. Implement static code analysis in CodePipeline stages. Schedule Inspector runs. 
+For webapp: Upgrade Spring and Tomcat on GitHub and re-test source-code. Release the change in CodeDeploy. Re-test the back-end instances with Inspector. Implement static code analysis in CodePipeline stages. Schedule Inspector runs. 
 
 For AWS environment: reverse engineer IAM policies and implement least priveledge by scoping down all permissions to required resources only where possible. Fix all other issues detected by CIS Config rules in the account. 
 
@@ -134,3 +134,5 @@ You should regularly apply patches and review security best practices for the de
 1. Track ongoing security announcements and updates for your framework.
 2. Before you deploy your project, follow the best practices developed for your framework.
 3. Review dependencies for your framework on a regular basis and update as needed.
+4. Follow the reccomendations for your compliance framework on regular basis and implement best practices for your environment.
+5. Continuously monitor the environment for any anomalies with the SIEM tools.
