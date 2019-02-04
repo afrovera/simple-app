@@ -1,7 +1,6 @@
 FROM openjdk:8-jdk-alpine
-FROM openjdk:8-jdk-alpine
 VOLUME /tmp
-ADD JAR_FILE
+ARG JAR_FILE
 COPY ${JAR_FILE} app.jar
 RUN sh -c 'touch /app.jar'
 ENV JAVA_OPTS=""
