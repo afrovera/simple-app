@@ -1,27 +1,23 @@
 {
+  "taskDefinition": {
+      
     "networkMode": "awsvpc",
+    "family": "opstest",
     "containerDefinitions": [
-        {
-            "essential": true,
-            "name": "tomcat-webserver",
-            "image": "tomcat",
-            "memory": 2048,
-            "cpu": 1024,
-            "portMappings": [
-                {
-                    "hostPort": 80,
-                    "containerPort": 80,
-                    "protocol": "tcp"
-                }
-            ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": "/ecs/tomcat-container-logs",
-                    "awslogs-region": "eu-west-1"
-                }
-            }
-        }
-    ],
-    "family": "tomcat-webserver"
+      {
+        "name": "hello-world",
+        "image": 998725118167.dkr.ecr.eu-west-1.amazonaws.com/ecs-c-repos-rubaugnzppg7:latest",
+        "cpu": 100,
+        "portMappings": [
+          {
+            "protocol": "tcp",
+            "containerPort": 80,
+            "hostPort": 80
+          }
+        ],
+        "memory": 128,
+        "essential": true
+      }
+    ]
+  }
 }
