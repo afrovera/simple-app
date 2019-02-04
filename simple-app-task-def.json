@@ -2,10 +2,10 @@
   "taskDefinition": {
       
     "networkMode": "awsvpc",
-    "family": "opstest",
+    "family": "simple-app",
     "containerDefinitions": [
       {
-        "name": "hello-world",
+        "name": "simple-app",
         "image": 998725118167.dkr.ecr.eu-west-1.amazonaws.com/ecs-c-repos-rubaugnzppg7:latest",
         "cpu": 100,
         "portMappings": [
