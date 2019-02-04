@@ -1,8 +1,7 @@
-FROM openjdk:8-jdk-alpine
+FROM java:8
+MAINTAINER afrovera@gmail.com
 VOLUME /tmp
-ARG JAR_FILE
-COPY ${JAR_FILE} app.jar
-RUN sh -c 'touch /app.jar'
-ENV JAVA_OPTS=""
-ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar" ]
-EXPOSE 80
+ADD suchapp-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8080
+RUN bash -c 'touch /app.jar'
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
