@@ -1,5 +1,6 @@
 FROM openjdk:8-jdk-alpine
 VOLUME /tmp
-ADD target/suchapp-0.0.1-SNAPSHOT.jar suchapp-0.0.1-SNAPSHOT.jar
+ARG JAR_FILE
+COPY ${JAR_FILE} app.jar
 EXPOSE 5000
-CMD ["java", "-jar", "suchapp-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
