@@ -57,7 +57,7 @@ You can also use the Amazon EC2 Run Command feature to securely and remotely man
 
 Furthermore, App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework version. Specifying version 2.0.8. in pom.xml patched it.
 
-Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place, and make use of Amazon Inspector.
+Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place, and make use of Amazon Inspector for the projects running on EC2.
 
 Steps to deploy
 ------------------
