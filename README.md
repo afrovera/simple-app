@@ -47,7 +47,7 @@ the app.
 About this solution
 --------------------
 
-I made a modification to the Java controller source code to call EC2 metadata URL when you hit /hello and return the backend AZ to the client for the purpose of this assignment. If you hit /hello, it will return back-end AZ behind the ELB. 
+I made a modification to the Java controller source code to call EC2 metadata URL, so when you hit /hello and return the backend AZ from behind the ALB to the client for the purpose of this assignment. 
 
 The decision on the deployment strategy came from the following considerations:
 - Protecting sensitive credentials -> there is no direct access configured to the back-ends. The ECS cluster assigns tasks to back-ends via an IAM role assigned to the task. However, if more security is needed in the future, Amazon ECS enables you to inject sensitive data into your containers by storing your sensitive data in either AWS Secrets Manager secrets or AWS Systems Manager Parameter Store parameters[via these steps](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) and then referencing them in your container definition. 
