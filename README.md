@@ -66,7 +66,7 @@ Launching this AWS CloudFormation stack provisions a continuous deployment proce
 
 When creating this stack, you can opt to deploy the service onto AWS Fargate or Amazon EC2. AWS Fargate allows you to run containers without managing clusters or services. If you choose Amazon EC2, an Auto Scaling group of t2.micro instances will be created to host your service.
 
-[![](images/architecture.png)]
+[!(images/architecture.png)]
 
 #### 1. Fork the GitHub repository
 
