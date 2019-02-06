@@ -79,7 +79,7 @@ From your terminal application, execute the following command (make sure to
 replace `<your_github_username>` with your actual GitHub username):
 
 ```console
-git clone https://github.com/<your_github_username>/opstest
+git clone https://github.com/<your_github_username>/simple-app
 ```
 
 This creates a directory named `opstest` in your current directory, which contains the code for the Amazon ECS sample app.
