@@ -88,13 +88,13 @@ This creates a directory named `opstest` in your current directory, which contai
 
 Copy the [templates](https://github.com/afrovera/devsecops/tree/master/templates) folder to your own S3 bucket. Note, this should result in a folder your_bucket/templates with 6 CloudFormation tempaltes. Copy direct link to ecs-continuous-deployment.yaml template from your bucket. If deploying in multiple regions, create bucket in each region with matching /templates folder. Repeat deployment steps below for each region. 
 
-In CloudFormation console (or via CLI) deploy deployment.yaml template by pasting the link in 'specify an Amazon S3 template URL' field. 
+In CloudFormation console (or via CLI) deploy ecs-continuous-deployment.yaml template by pasting the link in 'specify an Amazon S3 template URL' field. 
 
 The CloudFormation template requires the following parameters:
 
 Cluster Configuration
 
-Launch Type: Deploy the service using either AWS Fargate or Amazon EC2. Selecting EC2 will create an Auto Scaling group of t2.micro instances for your cluster. See the documentation to learn more about launch types.
+Launch Type: Deploy the service using either AWS Fargate or Amazon EC2. Selecting EC2 will create an Auto Scaling group of t2.micro instances for your cluster. This simple-app solution was tested with Amazon EC2. See the documentation to learn more about launch types.
 
 GitHub Configuration
 
