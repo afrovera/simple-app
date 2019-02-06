@@ -47,26 +47,62 @@ the app.
 About this solution
 --------------------
 
-I made a modification to the Java controller source code to call EC2 metadata URL when you hit /hello and return the backend AZ to the client for the purpose of this assignment. If you hit /hello 3 times when ELB is scaled to 3 back-ends, it will return 3 different AZs. For the purpose of this assignment the CFT tempalte is designed to scale to 3 backends during bootstrappng process. To bootstrap the environment scaled out to any specific number of backends modify the parameter of the CFT template to a minimum desired number. The app is build and deployed through CodePipeline to 2 Elastic Beanstalk applications which can be auto-scaled to fault tolerance tests. The CodePileline has integrated rollbacks and re-deployment options integrated by default. There is no SSH or password access to the Beanstalk backends since it has systems manager (SSM) agent already installed by default for remote access. App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework and Tomcat version. Amazon Inspector scanner confirmed the findings. Remediation is to upgrade Spring and Tomcat immediately. Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place.
+I made a modification to the Java controller source code to call EC2 metadata URL when you hit /hello and return the backend AZ to the client for the purpose of this assignment. If you hit /hello, it will return back-end AZ behind the ELB. 
 
-Link to the [Scan reports](https://github.com/afrovera/devsecops/tree/master/reports).
+The decision on the deployment strategy came from the following considerations:
+- Protecting sensitive credentials -> there is no direct access configured to the back-ends. The ECS cluster assigns tasks to back-ends via an IAM role assigned to the task. However, if more security is needed in the future, Amazon ECS enables you to inject sensitive data into your containers by storing your sensitive data in either AWS Secrets Manager secrets or AWS Systems Manager Parameter Store parameters[via these steps](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) and then referencing them in your container definition. 
+- Minimizing the impact if an attacker should break through the app -> the app is dockerized and deployed through CI/CI pipeline to ECS cluster with ALB/Auto-scaling which programmatically assigns the tasks to back-ends. If an attacker should break through the app, it can only affect that docker container, which can be re-deployed through CI/CD pipeline through to a different ECS backend insntace. 
+
+You can also use the Amazon EC2 Run Command feature to securely and remotely manage the configuration of your Amazon ECS container instances. Run Command provides a simple way of performing common administrative tasks without having to log on locally to the instance. You can manage configuration changes across your clusters by simultaneously executing commands on multiple container instances. [Run command reports status and result for each command](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ec2-run-command.html).
+
+Furthermore, App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework and Tomcat version. Amazon Inspector scanner confirmed the findings. Remediation is to upgrade Spring and Tomcat immediately. Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place, and make use of Amazon Inspector.
 
 Steps to deploy
 ------------------
 
 These steps assume that you have an AWS credentials with minimum required privileges to deploy the stack. The number of services deployed by this project requires very broad IAM permissions, I recommend using MFA-protected IAM use/role with such policy.
 
-CodePipeline stack is designed to deploy to Elastic Beantalk which comes in 2 versions, with multi-subnet VPC and without VPC. After the deployment of the stack, Beanstalk environments can be auto-scaled for the purpose of failue tolerance testing. 
+Launching this AWS CloudFormation stack provisions a continuous deployment process that uses AWS CodePipeline to monitor a GitHub repository for new commits and AWS CodeBuild to create a new Docker container image and to push it into Amazon Elastic Container Registry (Amazon ECR).
 
-1. Prepare AWS Account by creating an S3 bucket for storing CodeBuild Artifacts and Amazon-issued SSL certificate for securing the website (optional). 
+When creating this stack, you can opt to deploy the service onto AWS Fargate or Amazon EC2. AWS Fargate allows you to run containers without managing clusters or services. If you choose Amazon EC2, an Auto Scaling group of t2.micro instances will be created to host your service.
 
-*Create EC2 keypair in 2 regions (default opstest).
-aws ec2 create-key-pair --key-name opstest --region us-east-1
-aws ec2 create-key-pair --key-name opstest --region eu-west-1
+[![](images/architecture.png)][architecture]
 
-*Create an S3 bucket for storing CodeBuild Artifacts (default devsecops-opstest).
-aws s3api create-bucket --bucket devsecops-opstest --region us-east-1
-aws s3api create-bucket --bucket devsecops-opstest --region eu-west-1
+#### 1. Fork the GitHub repository
+
+[Fork](https://help.github.com/articles/fork-a-repo/) the [Amazon ECS sample app](https://github.com/afrovera/opstest) GitHub repository into your GitHub account.
+
+From your terminal application, execute the following command (make sure to
+replace `<your_github_username>` with your actual GitHub username):
+
+```console
+git clone https://github.com/<your_github_username>/opstest
+```
+
+This creates a directory named `opstest` in your current directory, which contains the code for the Amazon ECS sample app.
+
+#### 2. Create the CloudFormation stack
+
+Copy the [templates](https://github.com/afrovera/devsecops/tree/master/templates) folder to your own S3 bucket. Note, this should result in a folder your_bucket/templates with 6 CloudFormation tempaltes. Copy direct link to ecs-continuous-deployment.yaml template from your bucket. If deploying in multiple regions, create bucket in each region with matching /templates folder. Repeat deployment steps below for each region. 
+
+In CloudFormation console (or via CLI) deploy deployment.yaml template by pasting the link in 'specify an Amazon S3 template URL' field. 
+
+The CloudFormation template requires the following parameters:
+
+Cluster Configuration
+
+Launch Type: Deploy the service using either AWS Fargate or Amazon EC2. Selecting EC2 will create an Auto Scaling group of t2.micro instances for your cluster. See the documentation to learn more about launch types.
+
+GitHub Configuration
+
+Repo: The repo name of the sample service.
+Branch: The branch of the repo to deploy continuously.
+User: Your username on GitHub.
+Personal Access Token: Token for the user specified above. (https://github.com/settings/tokens)
+The CloudFormation stack provides the following output:
+
+ServiceUrl: The sample service that is being continuously deployed.
+PipelineUrl: The continuous deployment pipeline in the AWS Management Console.
 
 Optional extra
 ------------------
