@@ -70,7 +70,7 @@ When creating this stack, you can opt to deploy the service onto AWS Fargate or 
 
 #### 1. Fork the GitHub repository
 
-[Fork](https://help.github.com/articles/fork-a-repo/) the [Amazon ECS sample app](https://github.com/afrovera/opstest) GitHub repository into your GitHub account.
+[Fork](https://help.github.com/articles/fork-a-repo/) the [Amazon ECS sample app](https://github.com/afrovera/devsecops) GitHub repository into your GitHub account.
 
 From your terminal application, execute the following command (make sure to
 replace `<your_github_username>` with your actual GitHub username):
