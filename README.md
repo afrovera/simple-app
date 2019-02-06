@@ -55,7 +55,9 @@ The decision on the deployment strategy came from the following considerations:
 
 You can also use the Amazon EC2 Run Command feature to securely and remotely manage the configuration of your Amazon ECS container instances. Run Command provides a simple way of performing common administrative tasks without having to log on locally to the instance. You can manage configuration changes across your clusters by simultaneously executing commands on multiple container instances. [Run command reports status and result for each command](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ec2-run-command.html).
 
-Furthermore, App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework and Tomcat version. Amazon Inspector scanner confirmed the findings. Remediation is to upgrade Spring and Tomcat immediately. Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place, and make use of Amazon Inspector.
+Furthermore, App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework version. Specifying version 2.0.8. in pom.xml patched it.
+
+Future consideration is to integrate static code analysis into the CodePipeline stages during the releases to scan for vulnerabilities before deployments take place, and make use of Amazon Inspector.
 
 Steps to deploy
 ------------------
