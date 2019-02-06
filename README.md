@@ -53,7 +53,8 @@ The decision on the deployment strategy came from the following considerations:
 - Protecting sensitive credentials -> there is no direct access configured to the back-ends. The ECS cluster assigns tasks to back-ends via an IAM role assigned to the task. However, if more security is needed in the future, Amazon ECS enables you to inject sensitive data into your containers by storing your sensitive data in either AWS Secrets Manager secrets or AWS Systems Manager Parameter Store parameters[via these steps](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) and then referencing them in your container definition. 
 - Minimizing the impact if an attacker should break through the app -> the app is dockerized and deployed through CI/CI pipeline to ECS cluster with ALB/Auto-scaling which programmatically assigns the tasks to back-ends. If an attacker should break through the app, it can only affect that docker container, which can be re-deployed through CI/CD pipeline through to a different ECS backend insntace. 
 
-You can also use the Amazon EC2 Run Command feature to securely and remotely manage the configuration of your Amazon ECS container instances. Run Command provides a simple way of performing common administrative tasks without having to log on locally to the instance. You can manage configuration changes across your clusters by simultaneously executing commands on multiple container instances. [Run command reports status and result for each command](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ec2-run-command.html).
+You can also use the Amazon EC2 Run Command feature to securely and remotely manage the configuration of your Amazon ECS container instances. Run Command provides a 
+way of performing common administrative tasks without having to log on locally to the instance. You can manage configuration changes across your clusters by simultaneously executing commands on multiple container instances. [Run command reports status and result for each command](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ec2-run-command.html).
 
 Furthermore, App was scanned with a app.snyk.io utility and has 5 high severity vulnerabilities due to the outdated Spring framework version. Specifying version 2.0.8. in pom.xml patched it.
 
@@ -72,7 +73,7 @@ When creating this stack, you can opt to deploy the service onto AWS Fargate or 
 
 #### 1. Fork the GitHub repository
 
-[Fork](https://help.github.com/articles/fork-a-repo/) the [Amazon ECS sample app](https://github.com/afrovera/devsecops) GitHub repository into your GitHub account.
+[Fork](https://help.github.com/articles/fork-a-repo/) the [sample-app](https://github.com/afrovera/devsecops) GitHub repository into your GitHub account.
 
 From your terminal application, execute the following command (make sure to
 replace `<your_github_username>` with your actual GitHub username):
