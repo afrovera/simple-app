@@ -102,6 +102,7 @@ Repo: The repo name of the sample service.
 Branch: The branch of the repo to deploy continuously.
 User: Your username on GitHub.
 Personal Access Token: Token for the user specified above. (https://github.com/settings/tokens)
+
 The CloudFormation stack provides the following output:
 
 ServiceUrl: The sample service that is being continuously deployed.
@@ -119,18 +120,19 @@ aws acm request-certificate --domain-name example.com --validation-method DNS --
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region eu-west-1
 
-2. (Optional) Create [VPC Stack](https://github.com/afrovera/quickstart-aws-vpc/blob/master/templates/aws-vpc.template) with Public/Private subnets in multiple availibility zones.
-3. Create [Code Pipeline Stacks](https://github.com/afrovera/devsecops/tree/master/templates) in 2 regions with Git source of this repo.
-4. Release the PipeLine change.
-5. Deploy from AWS Git CodePipeline to the AWS Beanstalk targets in each region. Alternatively you can confugure [cross region actions](https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html) in CodePipeline.
-6. (Optional) Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
-7. (Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments in 2 regions. Detailed steps:
+(Optional) Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
+
+(Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments in 2 regions. Detailed steps:
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-failover-alias.html
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html 
-8. Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
-9. Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
-10. Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
-11. Deploy [AWS CIS Benchmark stack](https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
+
+Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
+
+Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
+
+Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
+
+Deploy [AWS CIS Benchmark stack](https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
 
 Steps to test
 ------------------
