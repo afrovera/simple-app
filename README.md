@@ -111,7 +111,7 @@ PipelineUrl: The continuous deployment pipeline in the AWS Management Console.
 
 Optional extra
 ------------------
-Amazon-issued SSL certificate for securing the website in 2 regions (replace www.example.com with actual domain name).
+ -- Request an Amazon-issued SSL certificate for securing the website in 2 regions (replace www.example.com with actual domain name).
 
 ```console
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region us-east-1
@@ -131,15 +131,13 @@ aws acm request-certificate --domain-name example.com --validation-method EMAIL 
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region eu-west-1
 ```
 
- -- (Optional) Deploy Cloudfront Web distribution with 2 custom origins of ALB FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
+ -- Deploy Cloudfront Web distribution with 2 custom origins of ALB FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
 
--- (Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 ALB environments in 2 regions. Detailed steps:
+-- Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 ALB environments in 2 regions. Detailed steps:
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-failover-alias.html
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html 
 
- -- Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
-
-Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of ALB FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
+ -- Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions. 
 
  -- Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
 
