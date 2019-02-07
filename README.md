@@ -106,33 +106,34 @@ Personal Access Token: Token for the user specified above. (https://github.com/s
 The CloudFormation stack provides the following output:
 
 ServiceUrl: The sample service that is being continuously deployed.
+
 PipelineUrl: The continuous deployment pipeline in the AWS Management Console.
 
 Optional extra
 ------------------
-*Amazon-issued SSL certificate for securing the website in 2 regions (replace www.example.com with actual domain name).
+ -- Amazon-issued SSL certificate for securing the website in 2 regions (replace www.example.com with actual domain name).
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method DNS --subject-alternative-names www.example.com --region eu-west-1
 
-*[Validate Certificate](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html#gs-acm-use-dns) by creating CNAME record for the domain and wait for certificate to be issued (approximately 5 minutes with Route 53).
+[Validate Certificate](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html#gs-acm-use-dns) by creating CNAME record for the domain and wait for certificate to be issued (approximately 5 minutes with Route 53).
 
-*If you canont update DNS records for the domain, use e-mail validation.
+If you canont update DNS records for the domain, use e-mail validation.
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region eu-west-1
 
-(Optional) Deploy Cloudfront Web distribution with 2 custom origins of ALB FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
+ -- (Optional) Deploy Cloudfront Web distribution with 2 custom origins of ALB FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
 
-(Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 ALB environments in 2 regions. Detailed steps:
+( -- Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 ALB environments in 2 regions. Detailed steps:
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-failover-alias.html
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html 
 
-Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
+ -- Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
 
 Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of ALB FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
 
-Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
+ -- Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
 
-Deploy [AWS CIS Benchmark stack](https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
+ -- Deploy [AWS CIS Benchmark stack](https://github.com/afrovera/quickstart-compliance-cis-benchmark/tree/master/templates) in 2 regions.
 
 Steps to test
 ------------------
@@ -142,11 +143,11 @@ Steps to test
 3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use a tool such as [Chaos monkey](https://github.com/Netflix/chaosmonkey) to automatically invoke fault tolerance tests.
 4. Inspect AWS Inspector reports and follow the remediation suggestions. 
 
-*ECS instances based on Amazon Linux with [preinstalled SSM agent](https://aws.amazon.com/about-aws/whats-new/2017/10/the-amazon-ec2-systems-manager-agent-is-now-pre-installed-on-amazon-linux-amis/) are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on ECS-tagged instances.
+ECS instances based on Amazon Linux with [preinstalled SSM agent](https://aws.amazon.com/about-aws/whats-new/2017/10/the-amazon-ec2-systems-manager-agent-is-now-pre-installed-on-amazon-linux-amis/) are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on ECS-tagged instances.
 
 aws ssm send-command --document-name "AmazonInspector-ManageAWSAgent" --parameters commands=["echo helloWorld"] --targets "Key=Name,Values=my_ecs_hosts"
 
-*After execution of the above, create resource group, assessment template and run it.
+After execution of the above, create resource group, assessment template and run it.
 
 aws inspector create-resource-group --resource-group-tags key=Name,value=my_ecs_hosts
 
