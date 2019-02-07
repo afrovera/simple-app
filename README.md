@@ -153,7 +153,7 @@ Steps to test
 3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use a tool such as [Chaos monkey](https://github.com/Netflix/chaosmonkey) to automatically invoke fault tolerance tests.
 4. Inspect AWS Inspector reports and follow the remediation suggestions. 
 
-ECS instances based on Amazon Linux with [preinstalled SSM agent](https://aws.amazon.com/about-aws/whats-new/2017/10/the-amazon-ec2-systems-manager-agent-is-now-pre-installed-on-amazon-linux-amis/) are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on ECS-tagged instances.
+ECS instances based on Amazon Linux with [preinstalled SSM agent](https://aws.amazon.com/about-aws/whats-new/2017/10/the-amazon-ec2-systems-manager-agent-is-now-pre-installed-on-amazon-linux-amis/). Use SSM agent to install and configure Inspector agent on ECS-tagged instances.
 
 ```console
 aws ssm send-command --document-name "AmazonInspector-ManageAWSAgent" --parameters commands=["echo helloWorld"] --targets "Key=Name,Values=my_ecs_hosts"
