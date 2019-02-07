@@ -120,15 +120,15 @@ aws acm request-certificate --domain-name example.com --validation-method DNS --
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region us-east-1
 aws acm request-certificate --domain-name example.com --validation-method EMAIL --subject-alternative-names www.example.com --region eu-west-1
 
-(Optional) Deploy Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
+(Optional) Deploy Cloudfront Web distribution with 2 custom origins of ALB FQDN's, associate ACM certifiate and WAF ACL with it. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin. Leave origin settings as default.
 
-(Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 beanstalk environments in 2 regions. Detailed steps:
+(Optional) Deploy AWSRoute 53 hosted zone with latency based routing record sets for 2 ALB environments in 2 regions. Detailed steps:
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-failover-alias.html
 https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-latency-alias.html 
 
 Deploy [AWS WAF Security Automations](https://github.com/afrovera/aws-waf-security-automations/tree/master/deployment) in 2 regions.
 
-Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of Elastic Beanstalk FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
+Associate WAF ACL and SSL certificate with Cloudfront Web distribution with 2 custom origins of ALB FQDN's. Add your domains that was on the SSL certificate (such as example.com and www.example.com) to Alternative Domain Names (CNAMEs). Select origin behavior policy Redirect HTTP to HTTPS for each origin.
 
 Deploy [Threat detection stack](https://github.com/afrovera/aws-scaling-threat-detection-workshop/tree/master/templates) in 2 regions. 
 
@@ -138,17 +138,17 @@ Steps to test
 ------------------
 
 1. The application contacts EC2 Metadata URL and returns an availability zone from the backend instance. Each time the app responds with "hello" and back-end AZ. Test by performing GET against the /hello endpoint.
-2. The application is spread across 2 AWS regions. It is possibleto test this multi-regional failover by associating 2 Beanstalk FQDN's with a domain in Route 53. Test by performing GET against /hello endpoint of a domain from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
+2. The application is spread across 2 AWS regions. It is possibleto test this multi-regional failover by associating 2 ALB FQDN's with a domain in Route 53. Test by performing GET against /hello endpoint of a domain from different regions from an EC2 instance in each region. The app will return "hello" and AZ of the closest region.
 3. Terminate an instance within the AZ. This will trigger the creation of another instance in the same AZ, but the availability of the service shouldn’t be interrupted. Bonus: use a tool such as [Chaos monkey](https://github.com/Netflix/chaosmonkey) to automatically invoke fault tolerance tests.
 4. Inspect AWS Inspector reports and follow the remediation suggestions. 
 
-*Beanstalk instances are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on Beanstalk-tagged instances.
+*ECS instances based on Amazon Linux with [preinstalled SSM agent](https://aws.amazon.com/about-aws/whats-new/2017/10/the-amazon-ec2-systems-manager-agent-is-now-pre-installed-on-amazon-linux-amis/) are launched with SSM agent installed by default on 2018 Amazon LinuxAMIs. Use SSM agent to install and configure Inspector agent on ECS-tagged instances.
 
-aws ssm send-command --document-name "AmazonInspector-ManageAWSAgent" --parameters commands=["echo helloWorld"] --targets "Key=Name,Values=my_beanstalk_hosts"
+aws ssm send-command --document-name "AmazonInspector-ManageAWSAgent" --parameters commands=["echo helloWorld"] --targets "Key=Name,Values=my_ecs_hosts"
 
 *After execution of the above, create resource group, assessment template and run it.
 
-aws inspector create-resource-group --resource-group-tags key=Name,value=my_beanstalk_hosts
+aws inspector create-resource-group --resource-group-tags key=Name,value=my_ecs_hosts
 
 aws inspector create-assessment-target --assessment-target-name ExampleAssessmentTarget --resource-group-arn arn:aws:inspector:us-west-2:123456789012:resourcegroup/0-AB6DMKnv
 
