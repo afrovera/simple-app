@@ -82,7 +82,7 @@ replace `<your_github_username>` with your actual GitHub username):
 git clone https://github.com/<your_github_username>/simple-app
 ```
 
-This creates a directory named `opstest` in your current directory, which contains the code for the Amazon ECS sample app.
+This creates a directory named `simple-app` in your current directory, which contains the code for the Amazon ECS sample app.
 
 #### 2. Create the CloudFormation stack
 
