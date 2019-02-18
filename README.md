@@ -12,10 +12,6 @@ app in multiple regions.
 Assignment
 -----------
 
-The sources you will deploy can be found at https://github.com/lc-nyovchev/opstest/tree/master. Launching
-the app is possible with the following command:
-./mvnw spring-boot:run -Dspring.config.location=/tmp/application.properties
-We expect a complete solution that will:
 1. Start the app in at least 3 availability zones. You are free to select the most secure solution to
 accomplish this.
 2. Each app instance should be provisioned in such a way that hitting the /hello URL displays the
@@ -38,9 +34,7 @@ Deliver
 
 1. A project hosted in an accessible location (GitHub is fine) with some instructions on how to run and a
 small description of what it does.
-2. A (short) list of risks identified in the source of commit
-https://github.com/lc-nyovchev/opstest/tree/389aa8a2c7c410542e1517c92b8d714c76dd387b of
-the app.
+2. A (short) list of risks identified in the source of commit of the app.
 3. A recommendation to improve the security of the app or infrastructure in your project.
 
 
